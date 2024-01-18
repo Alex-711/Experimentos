@@ -23,10 +23,11 @@ Preiramente, vamos baixar as bibliotecas usadas.
 
 ```bash
 pip install -r requirements.txt
+bash```
 
 Especialmente para a biblioteca do braindecode, é necessário baixar da seguinte maneira:
 ```bash
 pip install -U https://api.github.com/repos/braindecode/braindecode/zipball/master#egg=braindecode
 python -m "import braindecode; braindecode.__version__"
-
+bash```
 Deveria devolver um valor 0.8, 0.9 ou maior
