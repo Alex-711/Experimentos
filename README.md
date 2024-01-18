@@ -22,7 +22,7 @@ no modelo e para comparar as predições com a realidade para conseguir os resul
 Vale lembrar que todos os caminhos para a entrada ou saída dos dados tem que ser modificados para o o computador da pessoa que deseja utilizar-lo.
 
 # Como instalar e utilizar o projeto.
-Preiramente, vamos baixar as bibliotecas usadas.
+Primeiramente, vamos baixar as bibliotecas usadas.
 
 ```bash
 pip install -r requirements.txt
