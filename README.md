@@ -9,14 +9,17 @@ O projeto teve como base três instantes com a implementação de códigos difer
 carregarlos ao modificar o euclid_alignment para verdadeiro no arquivo **shhs_dataset.py**.
 
 (i) - Primeiramente realizamos testes que são salvos por meio do mlflow com k-fold = 5 resultando em 5 testes por modelo
-modificando a parte usada em cada um.
+modificando a parte usada em cada um **Arquivo main_1_kfold_5.py**.
 
 (ii) - Em seguida realizamos busca de parâmetros por meio da implementação do código de grid_search com o k-fold de 2 do braindecode e com o
-modelo em sua forma parcial.
+modelo em sua forma parcial **Arquivo main_2_busca_param.py**.
 
 
 (iii) - E por fim implementamos a amostragem sequencial, transformando os dados carregados de 30 (s) de leitura em 150 (s) para serem alimentados
-no modelo e para comparar as predições com a realidade para conseguir os resultados de acurácia, usamos a label do central.
+no modelo e para comparar as predições com a realidade para conseguir os resultados de acurácia, usamos a label do central **Arquivo main_3_amostragem_seq.py**.
+
+## Dica
+Vale lembrar que todos os caminhos para a entrada ou saída dos dados tem que ser modificados para o o computador da pessoa que deseja utilizar-lo.
 
 # Como instalar e utilizar o projeto.
 Preiramente, vamos baixar as bibliotecas usadas.
