@@ -29,7 +29,7 @@ def main():
     #save_dir = os.path.join(save_path,"/data/")
     save_dir = save_path + "/data/"
 
-    csv_path = r"./selected_shhs1_files.txt"
+    csv_path = r"./data/healthy_subjects.txt"
 
     if not os.path.exists(output_dir):
         os.mkdir(output_dir)
