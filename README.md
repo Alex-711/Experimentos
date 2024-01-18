@@ -33,4 +33,4 @@ Especialmente para a biblioteca do braindecode, é necessário baixar da seguint
 pip install -U https://api.github.com/repos/braindecode/braindecode/zipball/master#egg=braindecode
 python -m "import braindecode; braindecode.__version__"
 ```
-Deveria devolver um valor 0.8, 0.9 ou maior
+Deveria devolver um valor 0.8, 0.9 ou maior.
