@@ -1,0 +1,8 @@
+moabb==0.4.6
+braindecode
+mne==1.0.3
+tqdm==4.64.0
+mlflow==1.26.0
+pandas==1.4.2
+protobuf==3.20
+
