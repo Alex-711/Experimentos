@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 from numpy import array
 from skorch.dataset import ValidSplit
 
-from model import BENDR
+
 import mlflow
 import mne
 import numpy as np
@@ -31,8 +31,7 @@ from skorch.helper import predefined_split, SliceDataset
 from shhs_dataset import read_and_pre_processing_SHHS
 from dataset import read_and_pre_processing
 from read import load_data
-from model2 import EEGConformer
-from model3 import EEGConformer2
+from EEGConformer import EEGConformer
 from utils import get_exp_name, log_mlflow, set_determinism
 from functools import partial
 import torch
