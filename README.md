@@ -22,7 +22,7 @@ no modelo e para comparar as predições com a realidade para conseguir os resul
 Vale lembrar que todos os caminhos para a entrada ou saída dos dados tem que ser modificados para o o computador da pessoa que deseja utilizar-lo.
 
 # Como instalar e utilizar o projeto.
-Primeiramente, vamos baixar as bibliotecas usadas.
+Primeiramente, vamos criar um ambiente virtual com o python versão 3.10.6:
 
 ```bash
 python3.10 -m venv experimento
@@ -30,7 +30,7 @@ source experimento/bin/activate
 ```
 
 
-Depois baixos os requerimentos no arquivo que está no repositório:
+Depois baixos os requerimentos descritos no arquivo que está no repositório:
 ```bash
 pip install -r requirements.txt
 ```
