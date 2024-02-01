@@ -25,6 +25,13 @@ Vale lembrar que todos os caminhos para a entrada ou saída dos dados tem que se
 Primeiramente, vamos baixar as bibliotecas usadas.
 
 ```bash
+python3.10 -m venv experimento
+source experimento/bin/activate
+```
+
+
+Depois baixos os requerimentos no arquivo que está no repositório:
+```bash
 pip install -r requirements.txt
 ```
 
