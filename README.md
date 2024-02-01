@@ -47,4 +47,4 @@ Em princípio é necessário que se entre no site do [Sleep Heart Health Study(S
 
 
 # Os parâmetros e resultados dos experimentos:
-Tanto os parâmetros como os seus respectivos resultados estão disponíveis na [planilha](https://docs.google.com/spreadsheets/d/1q3-GsbcvHWdnrMp_I3fvmrjWTIUWpZhL2g6lhM-65GM/edit?usp=sharing) para serem visualizados.
+Tanto os parâmetros usados em qualquer um dos modelos como os seus respectivos resultados de treinamento estão disponíveis na [planilha](https://docs.google.com/spreadsheets/d/1q3-GsbcvHWdnrMp_I3fvmrjWTIUWpZhL2g6lhM-65GM/edit?usp=sharing) para serem visualizados.
