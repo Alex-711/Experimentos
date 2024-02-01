@@ -44,3 +44,7 @@ Deveria devolver um valor 0.8, 0.9 ou maior.
 
 # Como conseguir os dados usados para o treino:
 Em princípio é necessário que se entre no site do [Sleep Heart Health Study(SHHS)](https://sleepdata.org/datasets/shhs) para que se crie uma conta e peça a permissão aos dados do estudo. E por fim deve-se passar os dados por um pré-processamento disponível no github do [mulEEG](https://github.com/likith012/mulEEG/tree/main/preprocessing/shhs).
+
+
+# Os parâmetros e resultados dos experimentos:
+Tanto os parâmetros como os seus respectivos resultados estão disponíveis na [planilha](https://docs.google.com/spreadsheets/d/1q3-GsbcvHWdnrMp_I3fvmrjWTIUWpZhL2g6lhM-65GM/edit?usp=sharing) para serem visualizados.
