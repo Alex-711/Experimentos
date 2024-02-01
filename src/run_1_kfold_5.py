@@ -31,8 +31,6 @@ from skorch.callbacks import EarlyStopping, Checkpoint
 from skorch.callbacks import EpochScoring, LRScheduler
 from skorch.helper import predefined_split, SliceDataset
 from shhs_dataset import read_and_pre_processing_SHHS
-from dataset import read_and_pre_processing
-from read import load_data
 from EEGConformer import EEGConformer
 
 from utils import get_exp_name, log_mlflow, set_determinism
@@ -73,12 +71,6 @@ def main(args):
     subject_ids = range(83)
 
     # %% 2- Load, preprocess and window data
-    if args.type_dataset == "EDF":
-        windows_dataset, list_records, sfreq = load_data(args.dataset_path)
-    elif args.type_dataset == "DREAMS":
-        windows_dataset, list_records, sfreq = read_and_pre_processing(path=args.dataset_path,
-                                                                       savepath=args.save_dir,
-                                                                       n_jobs=args.num_workers)
     elif args.type_dataset == "SHHS":
         print("Lendo o dataset")
         windows_dataset, list_records, sfreq = read_and_pre_processing_SHHS(path=args.dataset_path,
