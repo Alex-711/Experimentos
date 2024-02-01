@@ -1,5 +1,5 @@
 # Classificação de Estágios do Sono com o Uso de Representações Latentes de EEG, Alinhamento Euclidiano e Mecanismos de Atenção
-Este trabalho visa realizar testes com modelos disponibilizados no site do braindecode *[https://braindecode.org/stable/api.html#models]* com redes transformers como 
+Este trabalho visa realizar testes com modelos disponibilizados no site do [braindecode](https://braindecode.org/stable/api.html#models) com redes transformers como 
 o EEGConformer para classificar estágios do sono. Para tanto, usamos técnicas de busca de parâmetros, alinhamento euclidiano 
 e amostragem sequencial.
 
@@ -21,12 +21,12 @@ no modelo e para comparar as predições com a realidade para conseguir os resul
 ## Dica
 Vale lembrar que todos os caminhos para a entrada ou saída dos dados tem que ser modificados para o o computador da pessoa que deseja utilizar-lo.
 
-# Como instalar e utilizar o projeto.
-Primeiramente, vamos criar um ambiente virtual com o python versão 3.10.6:
+# Pré-requisito para reprodução.
+Instale a biblioteca Conda, recomendamos o [tutorial](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html). Crie uma variável de sistema no conda, conforme instruções abaixo:
 
 ```bash
-python3.10 -m venv experimento
-source experimento/bin/activate
+conda create --name experimento python=3.10 pip --yes
+conda activate experimento
 ```
 
 
@@ -41,3 +41,6 @@ pip install -U https://api.github.com/repos/braindecode/braindecode/zipball/mast
 python -m "import braindecode; braindecode.__version__"
 ```
 Deveria devolver um valor 0.8, 0.9 ou maior.
+
+# Como conseguir os dados usados para o treino:
+Em princípio é necessário que se entre no site do [Sleep Heart Health Study(SHHS)](https://sleepdata.org/datasets/shhs) para que se crie uma conta e peça a permissão aos dados do estudo. E por fim deve-se passar os dados por um pré-processamento disponível no github do [mulEEG](https://github.com/likith012/mulEEG/tree/main/preprocessing/shhs).
