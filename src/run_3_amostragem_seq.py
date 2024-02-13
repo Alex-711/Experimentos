@@ -243,21 +243,20 @@ def main(args):
             ('train_bal_acc', train_bal_acc),
             ('valid_bal_acc', valid_bal_acc)
         ]
-
         clf = EEGClassifier(
-            feat_extractor,
-            criterion=torch.nn.CrossEntropyLoss,
-            criterion__weight=torch.Tensor(class_weights).to(device),
-            optimizer=torch.optim.Adam,
-            iterator_train__shuffle=False,
-            iterator_train__sampler=train_sampler,
-            iterator_valid__sampler=valid_sampler,
-            train_split=predefined_split(valid_set),
-            optimizer__lr=lr,
-            batch_size=batch_size,
-            callbacks=callbacks,
-            device=device,
-            classes=np.unique(y_train),
+        model,
+        criterion=torch.nn.CrossEntropyLoss,
+        criterion__weight=torch.Tensor(class_weights).to(device),
+        optimizer=torch.optim.Adam,
+        iterator_train__shuffle=False,
+        iterator_train__sampler=train_sampler,
+        iterator_valid__sampler=valid_sampler,
+        train_split=predefined_split(valid_set),  # using valid_set for validation
+        optimizer__lr=lr,
+        batch_size=batch_size,
+        callbacks=callbacks,
+        device=device,
+        classes=np.unique(y_train),
         )
         clf.fit(train_set, y =None, epochs = n_epochs)
         clf.initialize()
