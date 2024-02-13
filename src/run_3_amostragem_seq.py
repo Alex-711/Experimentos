@@ -185,7 +185,7 @@ def main(args):
             )
         n_windows = 5#30s
 
-        n_windows_stride = 0
+        n_windows_stride = 1
 
         train_sampler = SequenceSampler(
             train_set.get_metadata(), n_windows, n_windows_stride
