@@ -1,3 +1,5 @@
+"""Training of neural network."""
+
 import argparse
 from numbers import Integral
 from pathlib import Path
@@ -24,14 +26,14 @@ from sklearn.metrics import (
 from braindecode.visualization import plot_confusion_matrix
 from sklearn.model_selection import KFold
 from sklearn.model_selection import train_test_split
-from sklearn.utils import compute_class_weight
+from sklearn.utils import compute_class_weight, compute_sample_weight
 from skorch.callbacks import EarlyStopping, Checkpoint
 from skorch.callbacks import EpochScoring, LRScheduler
 from skorch.helper import predefined_split, SliceDataset
 from shhs_dataset import read_and_pre_processing_SHHS
 from dataset import read_and_pre_processing
-from read import load_data
-from EEGConformer import EEGConformer
+
+from model2 import EEGConformer
 from utils import get_exp_name, log_mlflow, set_determinism
 from functools import partial
 import torch
@@ -43,6 +45,7 @@ import seaborn as sns
 
 
 def main(args):
+
 
 
     # Instantiate the EEGConformer model
@@ -79,12 +82,13 @@ def main(args):
 
     # %% 2- Load, preprocess and window data
     if args.type_dataset == "EDF":
-        windows_dataset, list_records, sfreq = load_data(args.dataset_path)
+        print("using the wrong dataset")
     elif args.type_dataset == "DREAMS":
         windows_dataset, list_records, sfreq = read_and_pre_processing(path=args.dataset_path,
                                                                        savepath=args.save_dir,
                                                                        n_jobs=args.num_workers)
     elif args.type_dataset == "SHHS":
+        print(f"experimento número {args.number_exp} {args.model}")
         print("Lendo o dataset")
         windows_dataset, list_records, sfreq = read_and_pre_processing_SHHS(path=args.dataset_path,
                                                                        savepath=args.save_dir,
@@ -120,7 +124,7 @@ def main(args):
 
         experiment = mlflow.get_experiment_by_name(f"{experiment_name}")
 
-        active_run = mlflow.start_run(run_name=args.mlflow_dir, experiment_id=experiment.experiment_id)
+        active_run = mlflow.start_run(run_name=args.mlflow_dir, experiment_id=experiment.experiment_id,nested=True)
 
         print(f"Starting run {active_run.info.run_id}")
 
@@ -144,7 +148,7 @@ def main(args):
                                      valid_set.get_metadata()['target'].to_numpy(),
                                      test_set.get_metadata()['target'].to_numpy()])
         class_weights = compute_class_weight('balanced', classes=np.unique(y_true_all), y=y_true_all)
-        n_classes = 5
+
         n_chans = train_set[0][0].shape[0]
         input_window_samples = train_set[0][0].shape[1]
 
@@ -156,188 +160,148 @@ def main(args):
         if args.model == 'stager':
             lr = 1e-3
             n_chans = 2
-            feat_extractor = SleepStagerChambon2018(
+            model = SleepStagerChambon2018(
                 n_channels=n_chans,
-                n_classes=n_classes,
                 n_conv_chs=12,
                 sfreq=sfreq,
-                input_size_s=input_size_samples / sfreq,
                 apply_batch_norm=True,
-                return_feats=True
             )
         elif args.model == 'blanco':
-            lr = 5e-3
-            feat_extractor = SleepStagerBlanco2020(
+
+            model = SleepStagerBlanco2020(
                 n_channels,
                 sfreq,
-                n_classes=n_classes,
-                input_size_s=input_size_samples / sfreq,
+                n_conv_chans=12,
+
+
                 dropout=0.5,
                 apply_batch_norm=True,
-                return_feats=True,
+            )
+        elif args.model == 'usleep':
+            model = USleep(
+                sfreq=sfreq,
+                depth=16,
+
+
             )
         elif args.model == 'eegconformer':
-            feat_extractor = EEGConformer(
-                n_classes,
-                n_channels,
-                return_features=True
-
-            )
-        n_windows = 5#30s
-
-        n_windows_stride = 1
+            model = EEGConformer(n_channels=n_chans, n_classes=n_classes,
+                                 att_depth=6,
+                                 pool_time_stride=30,
+                                 att_heads=10,
+                                 input_window_samples=input_window_samples,
+                                 final_fc_length='auto', )
+        n_windows = 5  # Sequences of 3 consecutive windows
+        n_windows_stride = 1  # Maximally overlapping sequences
 
         train_sampler = SequenceSampler(
-            train_set.get_metadata(), n_windows, n_windows_stride
+            train_set.get_metadata(), n_windows, n_windows_stride, randomize=True
         )
         valid_sampler = SequenceSampler(valid_set.get_metadata(), n_windows, n_windows_stride)
 
+        # Print number of examples per class
+        print('Training examples: ', len(train_sampler))
+        print('Validation examples: ', len(valid_sampler))
 
-        def get_center_label(x):
-            if isinstance(x, Integral):
-                return x
-            return x[np.ceil(len(x) / 2).astype(int)] if len(x) > 1 else x
+        ######################################################################
 
-        train_set.target_transform = get_center_label
-        valid_set.target_transform = get_center_label
-        y_train = [train_set[idx][1] for idx in train_sampler]
+
+        y_train = [train_set[idx][1][1] for idx in train_sampler]
         class_weights = compute_class_weight('balanced', classes=np.unique(y_train), y=y_train)
-
-        cuda = torch.cuda.is_available()
+        cuda = torch.cuda.is_available()  
         device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 
         set_random_seeds(seed=31, cuda=cuda)
 
-        n_classes = 5
-
-        n_channels, input_size_samples = train_set[0][0].shape
-
-
-
-
-
-
-        model = nn.Sequential(
-            TimeDistributed(feat_extractor),
-            nn.Sequential(
-                nn.Flatten(start_dim=1),
-                nn.Dropout(0.5),
-                nn.Linear(feat_extractor.get_fc_size(),n_classes)
-            )
-        )
 
         if cuda:
             model.cuda()
-        lr = 5e-3
-        batch_size = 64
-        n_epochs = 2
+
+
+        def balanced_accuracy_multi(model, X, y):
+            y_pred = model.predict(X)
+            return balanced_accuracy_score(y.flatten(), y_pred.flatten())
 
         train_bal_acc = EpochScoring(
-            scoring='balanced_accuracy', on_train=True, name='train_bal_acc',
-            lower_is_better=False)
+            scoring=balanced_accuracy_multi,
+            on_train=True,
+            name='train_bal_acc',
+            lower_is_better=False,
+        )
         valid_bal_acc = EpochScoring(
-            scoring='balanced_accuracy', on_train=False, name='valid_bal_acc',
-            lower_is_better=False)
+            scoring=balanced_accuracy_multi,
+            on_train=False,
+            name='valid_bal_acc',
+            lower_is_better=False,
+        )
+
+        patient = EarlyStopping(patience=args.patience)
+
+        cp = Checkpoint(dirname=run_report)
+
         callbacks = [
+            ('cp', cp),
             ('train_bal_acc', train_bal_acc),
-            ('valid_bal_acc', valid_bal_acc)
+            ('valid_bal_acc', valid_bal_acc),
+            ('patient', patient),
+            ('lr_scheduler', LRScheduler('CosineAnnealingLR', T_max=args.n_epochs - 1))
         ]
+
         clf = EEGClassifier(
-        model,
-        criterion=torch.nn.CrossEntropyLoss,
-        criterion__weight=torch.Tensor(class_weights).to(device),
-        optimizer=torch.optim.Adam,
-        iterator_train__shuffle=False,
-        iterator_train__sampler=train_sampler,
-        iterator_valid__sampler=valid_sampler,
-        train_split=predefined_split(valid_set),  # using valid_set for validation
-        optimizer__lr=lr,
-        batch_size=batch_size,
-        callbacks=callbacks,
-        device=device,
-        classes=np.unique(y_train),
+            model,
+            criterion=torch.nn.CrossEntropyLoss,
+            criterion__weight=torch.Tensor(class_weights).to(device),
+            optimizer=torch.optim.Adam,
+            iterator_train__shuffle=False,
+            iterator_train__sampler=train_sampler,
+            iterator_valid__sampler=valid_sampler,
+            train_split=predefined_split(valid_set),  # using valid_set for validation
+            optimizer__lr=args.lr,
+            batch_size=args.batch_size,
+            callbacks=callbacks,
+            device=device,
+            classes=np.unique(y_train),
         )
-        clf.fit(train_set, y =None, epochs = n_epochs)
-        clf.initialize()
-        clf.load_params(checkpoint=cp)
+        clf.set_params(callbacks__valid_acc=None)
 
-        print(f"Training finished!")
-        print(f"Saving final model...")
-        torch.save(model.state_dict(), str(run_report / 'final_model.pth'))
-
-        clf.train_split = None  # Avoid pickling the validation set
+        clf.fit(train_set, y=None, epochs=args.n_epochs)
 
 
-        y_true = test_set.get_metadata()['target'].to_numpy()
-        y_pred = clf.predict(test_set)
-        y_prob = clf.predict_proba(test_set)
-
-        y_prob_valid = clf.predict_proba(valid_set)
-        y_prob_train = clf.predict_proba(train_set)
-
-        y_true_test = test_set.get_metadata()['target'].to_numpy()
-        y_pred_test = clf.predict(test_set)
-        y_prob_test = clf.predict_proba(test_set)
-
-        y_true_valid = valid_set.get_metadata()['target'].to_numpy()
-        y_pred_valid = clf.predict(valid_set)
-        y_prob_valid = clf.predict_proba(valid_set)
-
-        y_true_train = train_set.get_metadata()['target'].to_numpy()
-        y_pred_train = clf.predict(train_set)
-        y_prob_train = clf.predict_proba(train_set)
-
-        outfile = run_report / (args.model + str(args.part)+ str(args.number_exp) + ".npz")
-        print("Saving output to " + str(outfile))
-
-        np.savez(outfile, test_ix=test_ix, valid_ix=valid_ix, train_ix=train_ix,
-             y_true_test=y_true_test, y_true_valid=y_true_valid, y_true_train=y_true_train,
-             y_pred_test=y_pred_test, y_pred_valid=y_pred_valid, y_pred_train=y_pred_train,
-             y_prob_test=y_prob_test, y_prob_valid=y_prob_valid, y_prob_train=y_prob_train)
 
 
-        balanced_accuracy = balanced_accuracy_score(y_true, y_pred)
-        cohen_kappa = cohen_kappa_score(y_true, y_pred)
-        report = classification_report(y_true, y_pred, output_dict=True)
 
-        y_true_test = np.array([y for y in SliceDataset(test_set, 1)])
-        y_pred_test = clf.predict(test_set)
-        y_prob_test = clf.predict_proba(test_set)
+        # Extract loss and balanced accuracy values for plotting from history object
+        df = pd.DataFrame(clf.history.to_list())
+        df.index.name = "Epoch"
+        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 7), sharex=True)
+        df[['train_loss', 'valid_loss']].plot(color=['r', 'b'], ax=ax1)
+        df[['train_bal_acc', 'valid_bal_acc']].plot(color=['r', 'b'], ax=ax2)
+        ax1.set_ylabel('Loss')
+        ax2.set_ylabel('Balanced accuracy')
+        ax1.legend(['Train', 'Valid'])
+        ax2.legend(['Train', 'Valid'])
+        fig.tight_layout()
+        plt.show()
+        nome = f"{args.model}_150s_comEA_lr4_{args.number_exp}.pdf"
+        nome2 = f"{args.model}_150s_comEA_lr4_{args.number_exp}.csv"
+        fig.savefig(nome)
 
-        y_true_valid = np.array([y for y in SliceDataset(valid_set, 1)])
-        y_pred_valid = clf.predict(valid_set)
-        y_prob_valid = clf.predict_proba(valid_set)
 
-        y_true_train = np.array([y for y in SliceDataset(train_set, 1)])
-        y_pred_train = clf.predict(train_set)
-        y_prob_train = clf.predict_proba(train_set)
+        df.to_csv(nome2, index=True)
 
-        outfile = str(run_dir / (args.model + str(args.part)+str(args.number_exp)  + ".npz"))
-        print("Saving label information to " + outfile)
+        ######################################################################
 
-        np.savez(
-                outfile,
-                y_true_test=y_true_test,
-                y_true_valid=y_true_valid,
-                y_true_train=y_true_train,
-                y_pred_test=y_pred_test,
-                y_pred_valid=y_pred_valid,
-                y_pred_train=y_pred_train,
-                y_prob_test=y_prob_test,
-                y_prob_valid=y_prob_valid,
-                y_prob_train=y_prob_train,
-        )
 
-        log_mlflow(active_run, model, args, run_report, str(test_ix[0]), y_true, y_pred, y_prob,
-                   report, balanced_accuracy, cohen_kappa, y_prob_train=y_prob_train,
-                   y_prob_valid=y_prob_valid,
-                   split_ids=split_ids)
 
-        print(f"Run {active_run.info.run_id} over")
-        print("---------------------------------------")
-    else:
-        print(f"Model already trained, saved in: {str(run_report)}")
+
+
+
+
+
+
+
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Train models')
@@ -347,7 +311,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--part', type=int, default=0,
                         help='define number between 0 and 5, related with cv')
-    parser.add_argument('--number_exp', type=int, default=1420,
+    parser.add_argument('--number_exp', type=int, default=6829,
                         help='define number of the experiment')
 
     parser.add_argument('--dataset', type=str, default='SHHS',
@@ -377,10 +341,12 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', type=int, default=64,
                         help='define the value for batch size')
 
-    parser.add_argument('--n_epochs', type=int, default=1000,
+    parser.add_argument('--n_epochs', type=int, default=2,
+                        help='define the number of epochs.')
+    parser.add_argument('--lr', type=int, default=1e-4,
                         help='define the number of epochs.')
 
-    parser.add_argument('--patience', type=int, default=80,
+    parser.add_argument('--patience', type=int, default=2,
                         help='define the patience parameter')
 
     parser.add_argument('--num_workers', type=int, default=4,
@@ -393,4 +359,7 @@ if __name__ == '__main__':
                         help='define the weight_decay parameter.')
 
     args = parser.parse_args()
-    main(args)
+    for part in range(5):
+        args.part = part
+        args.number_exp = args.number_exp + 1
+        main(args)
