@@ -33,7 +33,7 @@ from skorch.helper import predefined_split, SliceDataset
 from shhs_dataset import read_and_pre_processing_SHHS
 from dataset import read_and_pre_processing
 
-from model2 import EEGConformer
+from EEGConformer import EEGConformer
 from utils import get_exp_name, log_mlflow, set_determinism
 from functools import partial
 import torch
