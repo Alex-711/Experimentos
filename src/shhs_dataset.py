@@ -27,6 +27,7 @@ def euclidean_alignment(data):
         r_op = np.eye(r.shape[0])
 
     result = np.matmul(r_op, data)
+    print(f"O sujeito foi lido")
 
 
 
@@ -43,11 +44,13 @@ def read_SHHS1(exp_n: int, data_path: str, actual_subj_path: str, euclid_alignme
 
     data_raw_x = data_raw['x']
     data_raw_y = data_raw['y']
-    if(euclid_alignment):
-        aligned_data_x, alignment_matrix = euclidean_alignment(data_raw_x,cont =exp_n)
 
+    if(euclid_alignment):
+        aligned_data_x, alignment_matrix = euclidean_alignment(data_raw_x)
         return aligned_data_x, data_raw_y
+    data_raw_x = copy.deepcopy(data_raw_x).transpose(0, 2, 1)
     return data_raw_x, data_raw_y
+
 
 
 
@@ -55,8 +58,8 @@ def read_SHHS1(exp_n: int, data_path: str, actual_subj_path: str, euclid_alignme
 
 def read_and_pre_processing_SHHS(window_size_s=30, sfreq=125, savepath='', path=None,
                                  data_path="/workspace/dataset/", n_jobs=1,
-                                 actual_subj="/workspace/actual_subjects/healthy_subjects.txt", euclid_alignment = False):
-    range_subjects = list(range(0, 100))
+                                 actual_subj="/workspace/actual_subjects/healthy_subjects.txt", euclid_alignment = True):
+    range_subjects = list(range(0, 5))
     list_X = []
     list_y = []
     list_subject_trial = []
@@ -65,6 +68,9 @@ def read_and_pre_processing_SHHS(window_size_s=30, sfreq=125, savepath='', path=
         X, y = read_SHHS1(subject, data_path, actual_subj , euclid_alignment)
 
         list_X.append(X)
+        #if(euclid_alignment == False):
+            #print(f"Carregando o sujeito {subject} sem o alinhamento")
+
 
         list_y.append(y)
 
