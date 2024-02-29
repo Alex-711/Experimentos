@@ -83,6 +83,7 @@ class EEGConformer(nn.Module):
             final_fc_length=2440,
             return_features=False,
             input_window_samples=None,
+            hidden_channels=32
     ):
         super().__init__()
         self.n_channels = n_channels
@@ -112,7 +113,8 @@ class EEGConformer(nn.Module):
 
         self.classification_head = _ClassificationHead(
             final_fc_length=final_fc_length,
-            n_classes=n_classes, return_features=return_features)
+            n_classes=n_classes, return_features=return_features,
+            hidden_channels=hidden_channels)
 
     def forward(self, x: Tensor) -> Tensor:
         x = torch.unsqueeze(x, dim=1)  # add one extra dimension

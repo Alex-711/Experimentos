@@ -39,6 +39,8 @@ from functools import partial
 import torch
 from braindecode.util import set_random_seeds
 from braindecode.models import ShallowFBCSPNet
+from braindecode.models import TimeDistributed
+
 from sklearn.model_selection import GridSearchCV, KFold
 import seaborn as sns
 
@@ -155,6 +157,8 @@ def main(args):
         n_classes = 5
 
         print(f"Getting model")
+        n_windows = 5  # Sequences of 3 consecutive windows
+        n_windows_stride = 1  # Maximally overlapping sequences
 
         n_channels, input_size_samples = train_set[0][0].shape
         if args.model == 'stager':
@@ -185,14 +189,23 @@ def main(args):
 
             )
         elif args.model == 'eegconformer':
-            model = EEGConformer(n_channels=n_chans, n_classes=n_classes,
+            hidden_channels=32
+            feature_extract = EEGConformer(n_channels=n_chans, n_classes=n_classes,
                                  att_depth=6,
                                  pool_time_stride=30,
                                  att_heads=10,
                                  input_window_samples=input_window_samples,
-                                 final_fc_length='auto', )
-        n_windows = 5  # Sequences of 3 consecutive windows
-        n_windows_stride = 1  # Maximally overlapping sequences
+                                 final_fc_length='auto', 
+                                 hidden_channels=32)
+            model = nn.Sequential(
+                TimeDistributed(feature_extract),  # apply model on each 30-s window
+                nn.Sequential(  # apply linear layer on concatenated feature vectors
+                    nn.Flatten(start_dim=1),
+                    nn.Dropout(0.5),
+                    nn.Linear(hidden_channels * n_windows, n_classes)
+                )
+            )
+
 
         train_sampler = SequenceSampler(
             train_set.get_metadata(), n_windows, n_windows_stride, randomize=True
