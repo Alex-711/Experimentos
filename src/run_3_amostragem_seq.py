@@ -200,7 +200,7 @@ def main(args):
                 nn.Sequential(  # apply linear layer on concatenated feature vectors
                     nn.Flatten(start_dim=1),
                     nn.Dropout(0.5),
-                    nn.Linear(feat_extractor.final_layer.final_layer[0].in_features * n_windows, n_classes)
+                    nn.Linear(32 * n_windows, n_classes)
                 )
             )
 
