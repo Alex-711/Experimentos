@@ -189,18 +189,20 @@ def main(args):
 
             )
         elif args.model == 'eegconformer':
+            hidden_channels=32
             feature_extract = EEGConformer(n_channels=n_chans, n_classes=n_classes,
                                  att_depth=6,
                                  pool_time_stride=30,
                                  att_heads=10,
                                  input_window_samples=input_window_samples,
-                                 final_fc_length='auto', )
+                                 final_fc_length='auto', 
+                                 hidden_channels=32)
             model = nn.Sequential(
                 TimeDistributed(feature_extract),  # apply model on each 30-s window
                 nn.Sequential(  # apply linear layer on concatenated feature vectors
                     nn.Flatten(start_dim=1),
                     nn.Dropout(0.5),
-                    nn.Linear(32 * n_windows, n_classes)
+                    nn.Linear(hidden_channels * n_windows, n_classes)
                 )
             )
 
